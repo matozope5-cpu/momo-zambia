@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
+    <title>MTN Loans – Instant Credit on MoMo</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* ── Reset & Variables ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --mtn-yellow: #FFCC00;
+            --mtn-darkyellow: #E6B800;
+            --mtn-black: #1a1a1a;
+            --mtn-gray: #666666;
+            --mtn-lightgray: #f5f5f5;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.12);
+            --border-radius: 20px;
+            /* Zambia flag colors */
+            --zm-green: #198A00;
+            --zm-red: #DE2010;
+            --zm-orange: #EF7D00;
+            --zm-black: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--mtn-lightgray);
+            color: var(--mtn-black);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            background: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text .mtn {
+            color: var(--mtn-black);
+            background: var(--mtn-yellow);
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .logo-text .loans {
+            color: var(--mtn-black);
+        }
+
+        .tagline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 204, 0, 0.15);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--mtn-black);
+        }
+
+        .flag-small {
+            width: 24px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ── Loading Overlay ── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .simple-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #ffffff;
+            border-top: 5px solid var(--mtn-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Main Card ── */
+        .main-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 28px 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .main-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Zambia flag stripe */
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg,
+                    var(--zm-green) 0%,
+                    var(--zm-green) 20%,
+                    var(--zm-red) 20%,
+                    var(--zm-red) 40%,
+                    var(--zm-black) 40%,
+                    var(--zm-black) 60%,
+                    var(--zm-orange) 60%,
+                    var(--zm-orange) 80%,
+                    var(--zm-green) 80%,
+                    var(--zm-green) 100%
+                );
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .loan-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--mtn-gray);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .loan-amount-display {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--mtn-black);
+            margin: 12px 0 8px;
+            position: relative;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+        }
+
+        .loan-amount-display::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 35%;
+            right: 35%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--mtn-yellow), transparent);
+            border-radius: 2px;
+        }
+
+        .loan-subtext {
+            font-size: 0.9rem;
+            color: var(--mtn-gray);
+            margin: 24px 0 20px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0 0;
+        }
+
+        .feature {
+            background: rgba(255, 204, 0, 0.08);
+            padding: 14px 8px;
+            border-radius: 14px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 204, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .feature i {
+            color: var(--mtn-yellow);
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .feature:hover {
+            background: rgba(255, 204, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* ── CTA Button ── */
+        .btn-apply {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--mtn-yellow), var(--mtn-darkyellow));
+            border: none;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(255, 204, 0, 0.3);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 0 20px 0;
+        }
+
+        .btn-apply:active {
+            transform: scale(0.98);
+        }
+
+        .btn-apply i {
+            transition: transform 0.2s;
+        }
+
+        .btn-apply:hover i {
+            transform: translateX(4px);
+        }
+
+        /* ── Trust Section ── */
+        .trust-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .trust-title {
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .trust-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 30%;
+            right: 30%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--mtn-yellow), transparent);
+        }
+
+        .trust-badges {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .trust-badge {
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #eee;
+            transition: all 0.2s;
+        }
+
+        .trust-badge i {
+            color: var(--mtn-yellow);
+            font-size: 1rem;
+        }
+
+        .trust-badge:hover {
+            background: #fffae9;
+            transform: translateY(-2px);
+        }
+
+        .trust-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--mtn-gray);
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            margin-top: 8px;
+            padding: 16px;
+            font-size: 0.7rem;
+            color: #888;
+        }
+
+        .footer a {
+            color: var(--mtn-black);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 420px) {
+            .logo-text {
+                font-size: 1.6rem;
+            }
+            .loan-amount-display {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ─── HEADER ─── -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-text">
+                    <span class="mtn">MTN</span>
+                    <span class="loans">Loans</span>
+                </div>
+            </div>
+            <div class="tagline">
+                <img class="flag-small" src="https://flagcdn.com/w40/zm.png" alt="Zambia flag" />
+                Instant loan sent directly to your MTN MoMo wallet
+            </div>
+        </div>
+
+        <!-- ─── LOADING OVERLAY ─── -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="simple-spinner"></div>
+        </div>
+
+        <!-- ─── MAIN CARD ─── -->
+        <div class="main-card">
+            <div class="loan-label">Your instant credit limit</div>
+            <div class="loan-amount-display">K&nbsp;100 – 15&nbsp;000</div>
+            <p class="loan-subtext">
+                Funds sent directly to MTN MoMo &bull; Service fee 8.9% (prorated) &bull; Approval in 5 minutes
+            </p>
+
+            <div class="features">
+                <div class="feature"><i class="fas fa-bolt"></i> Instant disbursement</div>
+                <div class="feature"><i class="fas fa-mobile-alt"></i> No paperwork</div>
+                <div class="feature"><i class="fas fa-shield-alt"></i> Secured by MTN MoMo</div>
+                <div class="feature"><i class="fas fa-calendar-check"></i> Flexible repayment</div>
+            </div>
+        </div>
+
+        <!-- ─── CTA ─── -->
+        <button class="btn-apply" id="applyBtn">
+            Continue with MTN MoMo <i class="fas fa-arrow-right"></i>
+        </button>
+
+        <!-- ─── TRUST SECTION ─── -->
+        <div class="trust-section">
+            <div class="trust-title">Approved by Zambians</div>
+            <div class="trust-badges">
+                <div class="trust-badge"><i class="fas fa-lock"></i> SSL Secure</div>
+                <div class="trust-badge"><i class="fas fa-certificate"></i> BoZ Licensed</div>
+                <div class="trust-badge"><i class="fas fa-shield-alt"></i> Data Protection</div>
+                <div class="trust-badge"><i class="fas fa-users"></i> 50,000+ clients</div>
+            </div>
+            <div class="trust-note">⭐ Over 50,000 loans granted across Zambia ⭐</div>
+        </div>
+
+        <!-- ─── FOOTER ─── -->
+        <div class="footer">
+            <p>&copy; 2026 MTN Loans &ndash; Powered by MTN Mobile Money</p>
+            <p>Need help? <a href="mailto:support@mtn.co.zm">support@mtn.co.zm</a></p>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            const applyBtn = document.getElementById('applyBtn');
+            const overlay = document.getElementById('loadingOverlay');
+
+            function startApplication() {
+                overlay.style.display = 'flex';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    window.location.href = 'details.html';
+                }, 2000);
+            }
+
+            applyBtn.addEventListener('click', startApplication);
+
+            // Hide overlay on load / back navigation
+            window.addEventListener('load', function() {
+                overlay.style.display = 'none';
+            });
+            window.addEventListener('pageshow', function() {
+                overlay.style.display = 'none';
+            });
+        })();
+    </script>
+
+</body>
+</html>
